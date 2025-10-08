@@ -1,6 +1,9 @@
 onelogin-python-aws-assume-role
 ===============================
 
+[![Lint and Format](https://github.com/mocyuto/onelogin-python-aws-assume-role/actions/workflows/lint.yml/badge.svg)](https://github.com/mocyuto/onelogin-python-aws-assume-role/actions/workflows/lint.yml)
+[![CI](https://github.com/mocyuto/onelogin-python-aws-assume-role/actions/workflows/ci.yml/badge.svg)](https://github.com/mocyuto/onelogin-python-aws-assume-role/actions/workflows/ci.yml)
+
 Assume an AWS Role and get temporary credentials using Onelogin.
 
 Users will be able to choose from among multiple AWS roles in multiple AWS accounts when they sign in using OneLogin in order to assume an AWS Role and obtain temporary AWS access credentials.
@@ -327,13 +330,25 @@ uv sync
 
 Development dependencies are automatically included with `uv sync`.
 
-To run tests:
+### Pre-commit hooks (Optional)
+
+To automatically format and lint code before committing:
+
+```sh
+# Install pre-commit hooks
+uv run pre-commit install
+
+# Run hooks manually on all files
+uv run pre-commit run --all-files
+```
+
+### Running tests
 
 ```sh
 uv run pytest
 ```
 
-To run linter and formatter:
+### Linting and formatting
 
 ```sh
 # Check code quality
@@ -348,6 +363,13 @@ uv run ruff format src/
 # Check formatting without changing files
 uv run ruff format --check src/
 ```
+
+### Continuous Integration
+
+This project uses GitHub Actions for CI/CD:
+
+- **Lint workflow** - Automatically formats code on pull requests
+- **CI workflow** - Runs tests and builds on multiple Python versions (3.8-3.12)
 
 ### Releasing
 

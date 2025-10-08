@@ -24,6 +24,19 @@ __pycache_
 /venv3
 virtualenv
 .venv
+
+# Project config files
 onelogin.sdk.json
 onelogin.aws.json
 accounts.yaml
+
+# Ruff cache
+.ruff_cache/
+
+# pytest cache
+.pytest_cache/
+
+# Coverage reports
+.coverage
+htmlcov/
+coverage.xml

@@ -14,7 +14,14 @@
    uv sync
    ```
 
-3. Make changes and test:
+3. (Optional) Install pre-commit hooks:
+   ```bash
+   uv run pre-commit install
+   ```
+
+   This will automatically run ruff format and check before each commit.
+
+4. Make changes and test:
    ```bash
    # Run tests
    uv run pytest
@@ -25,6 +32,14 @@
    # Format code
    uv run ruff format src/
    ```
+
+## GitHub Actions
+
+When you create a pull request:
+- The **Lint workflow** will automatically format your code with ruff
+- The **CI workflow** will run tests on Python 3.8-3.12 and verify the build
+
+Make sure to pull the automated formatting commits before pushing more changes.
 
 ## Adding Features, Pull Requests
 * Fork the repository
