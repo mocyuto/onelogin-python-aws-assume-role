@@ -1,5 +1,5 @@
 [build-system]
-requires = ["setuptools>=45", "wheel", "setuptools-scm"]
+requires = ["setuptools>=77.0.0", "wheel"]
 build-backend = "setuptools.build_meta"
 
 [project]
@@ -8,7 +8,7 @@ version = "1.10.1"
 description = "Assume an AWS Role and get temporary credentials using OneLogin"
 readme = "README.md"
 requires-python = ">=3.8"
-license = { text = "MIT" }
+license = "MIT"
 authors = [
     { name = "OneLogin", email = "support@onelogin.com" }
 ]
@@ -24,7 +24,6 @@ classifiers = [
     "Programming Language :: Python :: 3.10",
     "Programming Language :: Python :: 3.11",
     "Programming Language :: Python :: 3.12",
-    "License :: OSI Approved :: MIT License",
 ]
 
 dependencies = [
@@ -55,9 +54,8 @@ package-dir = {"" = "src"}
 
 [tool.setuptools.packages.find]
 where = ["src"]
-
-[tool.setuptools.package-data]
-"*" = ["accounts.yaml", "onelogin.sdk.json"]
+include = ["aws_assume_role*"]
+exclude = ["onelogin*"]
 
 [tool.uv]
 dev-dependencies = [
