@@ -1,6 +1,0 @@
-####### requirements.txt #######
-boto3>=1.7.84
-requests>=2.20.0
-pyyaml>=5.1.2
-lxml
-keyring>=23.0.0

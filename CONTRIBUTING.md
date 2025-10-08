@@ -1,5 +1,26 @@
 # Contributing to onelogin-python-aws-cli-assume-role
 
+## Development Setup
+
+1. Install uv:
+   ```bash
+   curl -LsSf https://astral.sh/uv/install.sh | sh
+   ```
+
+2. Clone and setup:
+   ```bash
+   git clone <your-fork-url>
+   cd onelogin-python-aws-assume-role
+   uv sync
+   ```
+
+3. Make changes and test:
+   ```bash
+   uv run pytest
+   uv run pylint src/
+   uv run pyflakes src/
+   ```
+
 ## Adding Features, Pull Requests
 * Fork the repository
 * Make your feature addition or bug fix

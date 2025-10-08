@@ -1,7 +1,22 @@
-FROM python:3.11
+FROM ghcr.io/astral-sh/uv:python3.12-bookworm-slim
 
-COPY . /
+WORKDIR /app
 
-RUN pip install awscli --upgrade --user
-RUN pip install boto3 lxml requests
-RUN python setup.py develop
+# Copy project configuration files
+COPY pyproject.toml uv.lock .python-version README.md LICENSE ./
+
+# Copy source code
+COPY src ./src
+
+# Install the project and its dependencies
+RUN uv sync --frozen --no-dev
+
+# Install AWS CLI
+RUN uv pip install awscli
+
+# Create directory for config files
+RUN mkdir -p /root/.onelogin
+
+# Set the entrypoint to use uv run
+ENTRYPOINT ["uv", "run", "--no-sync"]
+CMD ["onelogin-aws-assume-role", "--help"]
