@@ -1,0 +1,68 @@
+[build-system]
+requires = ["setuptools>=45", "wheel", "setuptools-scm"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "onelogin-aws-assume-role"
+version = "1.10.1"
+description = "Assume an AWS Role and get temporary credentials using OneLogin"
+readme = "README.md"
+requires-python = ">=3.8"
+license = { text = "MIT" }
+authors = [
+    { name = "OneLogin", email = "support@onelogin.com" }
+]
+keywords = ["onelogin", "aws-assume-role"]
+classifiers = [
+    "Development Status :: 4 - Beta",
+    "Intended Audience :: Developers",
+    "Intended Audience :: System Administrators",
+    "Operating System :: OS Independent",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.8",
+    "Programming Language :: Python :: 3.9",
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+    "License :: OSI Approved :: MIT License",
+]
+
+dependencies = [
+    "boto3>=1.7.84",
+    "onelogin==2.0.4",
+    "pyyaml>=5.1.2",
+    "lxml",
+]
+
+[project.optional-dependencies]
+test = [
+    "coverage>=3,<6",
+    "pylint>=1,<3",
+    "pep8>=1,<2",
+    "pyflakes>=1,<3",
+]
+
+[project.urls]
+Homepage = "https://github.com/onelogin/onelogin-python-aws-assume-role"
+Repository = "https://github.com/onelogin/onelogin-python-aws-assume-role"
+Issues = "https://github.com/onelogin/onelogin-python-aws-assume-role/issues"
+
+[project.scripts]
+onelogin-aws-assume-role = "aws_assume_role.aws_assume_role:main"
+
+[tool.setuptools]
+package-dir = {"" = "src"}
+
+[tool.setuptools.packages.find]
+where = ["src"]
+
+[tool.setuptools.package-data]
+"*" = ["accounts.yaml", "onelogin.sdk.json"]
+
+[tool.uv]
+dev-dependencies = [
+    "coverage>=3,<6",
+    "pylint>=1,<3",
+    "pep8>=1,<2",
+    "pyflakes>=1,<3",
+]

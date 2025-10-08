@@ -37,7 +37,7 @@ The toolkit is hosted in pypi, you can find the python-saml package at [https://
 
 ### Dependencies
 
-It works with python2 and python3.
+It works with Python 3.8+.
 
 * boto3  AWS Python SDK
 * onelogin  OneLogin Python SDK
@@ -46,24 +46,54 @@ It works with python2 and python3.
 
 ## Getting started
 
-### Virtualenv
+This project uses [uv](https://github.com/astral-sh/uv), a fast Python package manager, for dependency management.
 
-The use of a virtualenv is highly recommended.
+### Install uv
 
-Virtualenv helps isolating the python environment used to run the toolkit. You can find more details and an installation guide in the [official documentation](http://virtualenv.readthedocs.org/en/latest/).
+```bash
+# macOS and Linux
+curl -LsSf https://astral.sh/uv/install.sh | sh
 
-Once you have your virtualenv ready and loaded, then you can install the toolkit on it in development mode executing this:
+# Windows
+powershell -c "irm https://astral.sh/uv/install.ps1 | iex"
 
+# Using pip
+pip install uv
 ```
-python setup.py develop
+
+### Install the project
+
+```bash
+# Clone the repository
+git clone https://github.com/onelogin/onelogin-python-aws-assume-role.git
+cd onelogin-python-aws-assume-role
+
+# Install dependencies and the package
+uv sync
 ```
 
-Using this method of deployment the toolkit files will be linked instead of copied, so if you make changes on them you won't need to reinstall the toolkit.
+This will create a virtual environment in `.venv` and install all dependencies automatically.
 
-If you want install it in a normal mode, execute:
+### Run the tool
 
+```bash
+# Run directly with uv
+uv run onelogin-aws-assume-role
+
+# Or activate the virtual environment first
+source .venv/bin/activate  # On Unix/macOS
+# .venv\Scripts\activate  # On Windows
+onelogin-aws-assume-role
 ```
-python setup.py install
+
+### Alternative: Install from PyPI
+
+```bash
+# Install globally with uv
+uv pip install onelogin-aws-assume-role
+
+# Or with pip
+pip install onelogin-aws-assume-role
 ```
 
 ### Settings
@@ -167,7 +197,9 @@ This isn't needed for the script to function but it provides a better user exper
 * Enter your credentials in the `onelogin.sdk.json` file as explained above
 * Save the `onelogin.sdk.json` file in the root directory of the repo
 * `docker build . -t awsaccess:latest`
-* `docker run -it -v ~/.aws:/root/.aws awsaccess:latest onelogin-aws-assume-role --onelogin-username {user_email} --onelogin-subdomain {subdomain} --onelogin-app-id {app_id} --aws-region {aws region} --profile default`
+* `docker run -it -v ~/.aws:/root/.aws -v $(pwd)/onelogin.sdk.json:/root/.onelogin/onelogin.sdk.json awsaccess:latest onelogin-aws-assume-role --onelogin-username {user_email} --onelogin-subdomain {subdomain} --onelogin-app-id {app_id} --aws-region {aws region} --profile default`
+
+Note: The Docker image is now based on uv for faster and more efficient dependency management.
 
 ### How the process works
 
@@ -185,7 +217,7 @@ AWS region (`--aws-region`)
 every time, you can specify these parameters as command-line arguments and
 the tool won't ask for them any more._
 
-You can specify 
+You can specify
 OTP Code (`--otp`)
 and the cli will use this otp only for the first interaction
 requiring a manual OTP Code
@@ -210,48 +242,39 @@ A temporal AWS AccessKey and secretKey are retrieved in addition to a sessionTok
 Those data can be used to generate an AWS BasicSessionCredentials to be used in any AWS API SDK.
 
 
-## Quick Start using the python script
+## Quick Start
 
 ### Prepare the environment
 
-After checking out the repository, let's use a [virtual environment](https://virtualenv.pypa.io)
-```
-cd <repository>
-virtualenv venv
-```
-
-Activate then the environment
+After checking out the repository, install dependencies with uv:
 
 ```sh
-> source venv/bin/activate
+cd onelogin-python-aws-assume-role
+uv sync
 ```
 
-Then run
-
-```sh
-> python setup.py install
-```
-
-or
-
-```sh
-> python setup.py develop
-```
-
-to install dependencies.
+This will create a virtual environment and install all dependencies automatically.
 
 ### Usage
 
-Assuming you have your AWS Multi Account app set up correctly and you’re using valid OneLogin API credentials stored on the `onelogin.sdk.json` placed at the root of the repository, using this tool is as simple as following the prompts.
+Assuming you have your AWS Multi Account app set up correctly and you're using valid OneLogin API credentials stored on the `onelogin.sdk.json` placed at the root of the repository, using this tool is as simple as following the prompts.
 
 ```sh
-> onelogin-aws-assume-role
+# Run directly with uv
+uv run onelogin-aws-assume-role
 ```
 
-Or alternately save them to your AWS credentials file to enable faster access from any terminal.
+Or save credentials to your AWS credentials file to enable faster access from any terminal:
 
 ```sh
-> onelogin-aws-assume-role --profile profilename
+uv run onelogin-aws-assume-role --profile profilename
+```
+
+If you've activated the virtual environment, you can run the command directly:
+
+```sh
+source .venv/bin/activate  # On Unix/macOS
+onelogin-aws-assume-role --profile profilename
 ```
 
 By default, the credentials only last for 1 hour, but you can [edit that restriction on AWS and set a max of 12h session duration](https://aws.amazon.com/es/blogs/security/enable-federated-api-access-to-your-aws-resources-for-up-to-12-hours-using-iam-roles/).
@@ -296,11 +319,42 @@ aws ec2 describe-instances
 
 ## Development
 
-After checking out the repo, run `pip setup install` or `python setup.py develop` to install dependencies.
+After checking out the repo, install all dependencies including development dependencies:
 
-To release a new version, update the version number in `src/onelogin/api/version.py` and commit it, then you will be able to update it to pypi.
-with `python setup.py sdist upload` and `python setup.py bdist_wheel upload`.
-Create also a release tag on github.
+```sh
+uv sync
+```
+
+Development dependencies are automatically included with `uv sync`.
+
+To run tests:
+
+```sh
+uv run pytest
+```
+
+To run linters:
+
+```sh
+uv run pylint src/
+uv run pyflakes src/
+```
+
+### Releasing
+
+To release a new version:
+1. Update the version number in both `src/aws_assume_role/version.py` and `pyproject.toml`
+2. Commit the changes
+3. Build and upload to PyPI:
+   ```sh
+   uv build
+   uv publish
+   ```
+4. Create a release tag on GitHub:
+   ```sh
+   git tag v1.x.x
+   git push origin v1.x.x
+   ```
 
 ## Contributing
 
