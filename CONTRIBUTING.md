@@ -16,9 +16,14 @@
 
 3. Make changes and test:
    ```bash
+   # Run tests
    uv run pytest
-   uv run pylint src/
-   uv run pyflakes src/
+
+   # Check code quality
+   uv run ruff check src/
+
+   # Format code
+   uv run ruff format src/
    ```
 
 ## Adding Features, Pull Requests

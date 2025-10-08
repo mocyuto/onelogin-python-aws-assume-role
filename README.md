@@ -333,11 +333,20 @@ To run tests:
 uv run pytest
 ```
 
-To run linters:
+To run linter and formatter:
 
 ```sh
-uv run pylint src/
-uv run pyflakes src/
+# Check code quality
+uv run ruff check src/
+
+# Automatically fix issues
+uv run ruff check --fix src/
+
+# Format code
+uv run ruff format src/
+
+# Check formatting without changing files
+uv run ruff format --check src/
 ```
 
 ### Releasing
