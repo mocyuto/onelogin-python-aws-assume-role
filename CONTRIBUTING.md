@@ -1,5 +1,46 @@
 # Contributing to onelogin-python-aws-cli-assume-role
 
+## Development Setup
+
+1. Install uv:
+   ```bash
+   curl -LsSf https://astral.sh/uv/install.sh | sh
+   ```
+
+2. Clone and setup:
+   ```bash
+   git clone <your-fork-url>
+   cd onelogin-python-aws-assume-role
+   uv sync
+   ```
+
+3. (Optional) Install pre-commit hooks:
+   ```bash
+   uv run pre-commit install
+   ```
+
+   This will automatically run ruff format and check before each commit.
+
+4. Make changes and test:
+   ```bash
+   # Run tests
+   uv run pytest
+
+   # Check code quality
+   uv run ruff check src/
+
+   # Format code
+   uv run ruff format src/
+   ```
+
+## GitHub Actions
+
+When you create a pull request:
+- The **Lint workflow** will automatically format your code with ruff
+- The **CI workflow** will run tests on Python 3.8-3.12 and verify the build
+
+Make sure to pull the automated formatting commits before pushing more changes.
+
 ## Adding Features, Pull Requests
 * Fork the repository
 * Make your feature addition or bug fix

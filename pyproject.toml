@@ -1,0 +1,128 @@
+[build-system]
+requires = ["setuptools>=77.0.0", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "onelogin-aws-assume-role"
+version = "1.10.1"
+description = "Assume an AWS Role and get temporary credentials using OneLogin"
+readme = "README.md"
+requires-python = ">=3.8"
+license = "MIT"
+authors = [
+    { name = "Yuto Suzuki", email = "yuutoo.advance@gmail.com" },
+    { name = "OneLogin", email = "support@onelogin.com" }
+]
+keywords = ["onelogin", "aws-assume-role"]
+classifiers = [
+    "Development Status :: 4 - Beta",
+    "Intended Audience :: Developers",
+    "Intended Audience :: System Administrators",
+    "Operating System :: OS Independent",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.8",
+    "Programming Language :: Python :: 3.9",
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+]
+
+dependencies = [
+    "boto3>=1.7.84",
+    "onelogin==2.0.4",
+    "pyyaml>=5.1.2",
+    "lxml",
+]
+
+[project.optional-dependencies]
+test = [
+    "coverage>=3,<6",
+    "ruff>=0.8.0",
+    "pytest>=7.0.0",
+]
+
+[project.urls]
+Homepage = "https://github.com/mocyuto/onelogin-python-aws-assume-role"
+Repository = "https://github.com/mocyuto/onelogin-python-aws-assume-role"
+Issues = "https://github.com/mocyuto/onelogin-python-aws-assume-role/issues"
+
+[project.scripts]
+onelogin-aws-assume-role = "aws_assume_role.aws_assume_role:main"
+
+[tool.setuptools]
+package-dir = {"" = "src"}
+
+[tool.setuptools.packages.find]
+where = ["src"]
+include = ["aws_assume_role*"]
+exclude = ["onelogin*"]
+
+[tool.uv]
+dev-dependencies = [
+    "coverage>=3,<6",
+    "ruff>=0.8.0",
+    "pytest>=7.0.0",
+    "pre-commit>=3.0.0",
+]
+
+[tool.ruff]
+# Python version to target
+target-version = "py38"
+
+# Line length
+line-length = 120
+
+# Directories to exclude
+exclude = [
+    ".git",
+    ".venv",
+    "__pycache__",
+    "build",
+    "dist",
+    "*.egg-info",
+]
+
+[tool.ruff.lint]
+# Enable specific rule sets
+select = [
+    "E",   # pycodestyle errors
+    "W",   # pycodestyle warnings
+    "F",   # pyflakes
+    "I",   # isort
+    "B",   # flake8-bugbear
+    "C4",  # flake8-comprehensions
+]
+
+# Ignore specific rules for legacy code
+ignore = [
+    "E501",    # line too long (handled by formatter)
+    "E711",    # comparison to None (legacy code)
+    "E722",    # bare except (legacy code)
+    "N806",    # variable naming (legacy code)
+    "N812",    # lowercase imported as non-lowercase (legacy code)
+    "N999",    # invalid module name (aws-assume-role.py)
+    "UP031",   # use format specifiers (legacy code, can be fixed later)
+    "SIM102",  # nested if statements (legacy code)
+    "SIM105",  # contextlib.suppress (legacy code)
+    "SIM110",  # for loop to any (legacy code)
+    "SIM115",  # context manager for files (legacy code)
+    "SIM118",  # use 'in dict' instead of 'in dict.keys()' (legacy code)
+    "B006",    # mutable default argument (legacy code)
+]
+
+# Allow fix for all enabled rules
+fixable = ["ALL"]
+unfixable = []
+
+[tool.ruff.format]
+# Use double quotes for strings
+quote-style = "double"
+
+# Indent with spaces
+indent-style = "space"
+
+# Respect magic trailing comma
+skip-magic-trailing-comma = false
+
+# Auto-detect line endings
+line-ending = "auto"
