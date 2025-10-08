@@ -10,6 +10,7 @@ readme = "README.md"
 requires-python = ">=3.8"
 license = "MIT"
 authors = [
+    { name = "Yuto Suzuki", email = "yuutoo.advance@gmail.com" },
     { name = "OneLogin", email = "support@onelogin.com" }
 ]
 keywords = ["onelogin", "aws-assume-role"]
@@ -42,9 +43,9 @@ test = [
 ]
 
 [project.urls]
-Homepage = "https://github.com/onelogin/onelogin-python-aws-assume-role"
-Repository = "https://github.com/onelogin/onelogin-python-aws-assume-role"
-Issues = "https://github.com/onelogin/onelogin-python-aws-assume-role/issues"
+Homepage = "https://github.com/mocyuto/onelogin-python-aws-assume-role"
+Repository = "https://github.com/mocyuto/onelogin-python-aws-assume-role"
+Issues = "https://github.com/mocyuto/onelogin-python-aws-assume-role/issues"
 
 [project.scripts]
 onelogin-aws-assume-role = "aws_assume_role.aws_assume_role:main"
