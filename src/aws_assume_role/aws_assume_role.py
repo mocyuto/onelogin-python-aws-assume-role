@@ -14,6 +14,7 @@ import boto3
 import botocore.client
 from botocore.exceptions import ClientError
 from lxml import etree as ET
+
 from onelogin.api.client import OneLoginClient
 
 try:
@@ -440,7 +441,7 @@ def get_yes_or_not():
 
 def get_selection(max):
     answer = None
-    while answer is None or type(answer) != int or answer not in range(0, max):
+    while answer is None or not isinstance(answer, int) or answer not in range(0, max):
         answer = sys.stdin.readline().strip()
         try:
             answer = int(answer)
@@ -451,7 +452,7 @@ def get_selection(max):
 
 def get_duration():
     answer = None
-    while answer is None or type(answer) != int or answer not in range(900, 43200):
+    while answer is None or not isinstance(answer, int) or answer not in range(900, 43200):
         answer = sys.stdin.readline().strip()
         try:
             answer = int(answer)
