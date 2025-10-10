@@ -277,7 +277,7 @@ def get_saml_response(
             )
             sys.exit()
 
-    if saml_endpoint_response and saml_endpoint_response.type == None:
+    if saml_endpoint_response and saml_endpoint_response.type is None:
         print("SAML assertion failed with message: ", saml_endpoint_response.message)
         sys.exit()
 
