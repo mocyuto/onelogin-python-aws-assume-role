@@ -113,19 +113,8 @@ uv sync
 
 This will create a virtual environment in `.venv` and install all dependencies automatically.
 
-### Run the tool
 
-```bash
-# Run directly with uv
-uv run onelogin-aws-assume-role
-
-# Or activate the virtual environment first
-source .venv/bin/activate  # On Unix/macOS
-# .venv\Scripts\activate  # On Windows
-onelogin-aws-assume-role
-```
-
-### Settings
+## Settings
 
 The python script uses a settings file, where [OneLogin SDK properties](https://github.com/onelogin/onelogin-python-sdk#getting-started) are placed.
 
@@ -166,6 +155,7 @@ There is an optional file `onelogin.aws.json`, that can be used if you plan to e
   "aws_region": "us-west-2",
   "aws_account_id": "",
   "aws_role_name": "",
+  "mfa_device_type": "",
   "profiles": {
     "profile-1": {
       "aws_account_id": "",
@@ -190,6 +180,7 @@ Where:
  * aws_region AWS region to use
  * aws_account_id AWS account id to be used
  * aws_role_name AWS role name to select
+ * mfa_device_type MFA Device Type to use (to skip MFA device selection prompt, e.g., 'Google Authenticator', 'OneLogin Protect')
  * profiles Contains a list of profile->account id, and optionally role name mappings. If this attribute is populated `aws_account_id`, `aws_role_name`, `aws_region`, and `app_id` will be set based on the `profile` provided when running the script.
 
 **Note**: Configuration values have the following precedence (from highest to lowest):
@@ -227,16 +218,6 @@ accounts:
 
 This isn't needed for the script to function but it provides a better user experience.
 
-### Docker installation method
-
-* `git clone git@github.com:onelogin/onelogin-python-aws-assume-role.git`
-* `cd onelogin-python-aws-assume-role`
-* Enter your credentials in the `onelogin.sdk.json` file as explained above
-* Save the `onelogin.sdk.json` file in the root directory of the repo
-* `docker build . -t awsaccess:latest`
-* `docker run -it -v ~/.aws:/root/.aws -v $(pwd)/onelogin.sdk.json:/root/.onelogin/onelogin.sdk.json awsaccess:latest onelogin-aws-assume-role --onelogin-username {user_email} --onelogin-subdomain {subdomain} --onelogin-app-id {app_id} --aws-region {aws region} --profile default`
-
-Note: The Docker image is now based on uv for faster and more efficient dependency management.
 
 ### How the process works
 
@@ -258,6 +239,18 @@ You can specify
 OTP Code (`--otp`)
 and the cli will use this otp only for the first interaction
 requiring a manual OTP Code
+
+You can also specify
+MFA Device Type (`--mfa-device-type`)
+to skip the MFA device selection prompt. This is useful when you have multiple MFA devices registered
+and want to use a specific type without being prompted every time. Common device types include:
+- `Google Authenticator`
+- `OneLogin Protect`
+- `Yubico YubiKey`
+- `OneLogin SMS`
+
+You can find your MFA Device Type by running the tool once and noting the device type from the MFA device
+selection screen, or by configuring it in the `onelogin.aws.json` file with the `mfa_device_type` field.
 
 Flag `--onelogin-password` is meant for integration with a password manager, like OSX Keychain, 1Password, KeePass, LastPass, etc. e.g.:
 - OSX Keychain: `--onelogin-password $(security find-generic-password -a $USER -s onelogin -w)`
@@ -360,6 +353,17 @@ uv sync
 ```
 
 Development dependencies are automatically included with `uv sync`.
+
+### Docker installation method
+
+* `git clone git@github.com:onelogin/onelogin-python-aws-assume-role.git`
+* `cd onelogin-python-aws-assume-role`
+* Enter your credentials in the `onelogin.sdk.json` file as explained above
+* Save the `onelogin.sdk.json` file in the root directory of the repo
+* `docker build . -t awsaccess:latest`
+* `docker run -it -v ~/.aws:/root/.aws -v $(pwd)/onelogin.sdk.json:/root/.onelogin/onelogin.sdk.json awsaccess:latest onelogin-aws-assume-role --onelogin-username {user_email} --onelogin-subdomain {subdomain} --onelogin-app-id {app_id} --aws-region {aws region} --profile default`
+
+Note: The Docker image is now based on uv for faster and more efficient dependency management.
 
 ### Pre-commit hooks (Optional)
 
