@@ -8,6 +8,7 @@
   "aws_account_id": "",
   "aws_role_name": "",
   "mfa_device_type": "",
+  "save_password": false,
   "profiles": {
     "profile-1": {
       "aws_account_id": "",

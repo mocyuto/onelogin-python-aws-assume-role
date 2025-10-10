@@ -12,8 +12,10 @@ from datetime import datetime
 
 import boto3
 import botocore.client
+import keyring
 from botocore.exceptions import ClientError
 from lxml import etree as ET
+
 from onelogin.api.client import OneLoginClient
 
 try:
@@ -33,6 +35,7 @@ TIME_SLEEP_ON_RESPONSE_PENDING = 15
 MAX_ITER_GET_SAML_RESPONSE = 6
 DEFAULT_AWS_DIR = os.path.expanduser("~/.aws")
 SAML_CACHE_PATH = os.path.join(DEFAULT_AWS_DIR, "saml_cache.txt")
+KEYRING_SERVICE_NAME = "onelogin-aws-assume-role"
 
 
 def get_options():
@@ -59,6 +62,13 @@ def get_options():
     )
     parser.add_argument("-u", "--onelogin-username", dest="username", help="OneLogin username (email address)")
     parser.add_argument("--onelogin-password", dest="password", help="OneLogin password")
+    parser.add_argument(
+        "--save-password",
+        dest="save_password",
+        default=False,
+        action="store_true",
+        help="Save OneLogin password to OS keychain",
+    )
     parser.add_argument("--otp", dest="otp", help="2FA OTP")
     parser.add_argument("-a", "--onelogin-app-id", dest="app_id", help="OneLogin app id")
     parser.add_argument("-d", "--onelogin-subdomain", dest="subdomain", help="OneLogin subdomain")
@@ -129,6 +139,8 @@ def get_options():
             options.aws_role_name = config["aws_role_name"]
         if "mfa_device_type" in config.keys() and config["mfa_device_type"] and not options.mfa_device_type:
             options.mfa_device_type = config["mfa_device_type"]
+        if "save_password" in config.keys() and config["save_password"] and not options.save_password:
+            options.save_password = config["save_password"]
         if (
             "profiles" in config.keys()
             and config["profiles"]
@@ -164,6 +176,35 @@ def get_options():
         options.saml_api_version = 2
 
     return options
+
+
+def get_password_from_keyring(username):
+    """
+    Get password from OS keychain.
+    Arguments:
+        username (str): OneLogin username
+    Returns:
+        str: Password or None if not found
+    """
+    try:
+        return keyring.get_password(KEYRING_SERVICE_NAME, username)
+    except Exception as e:
+        print(f"Warning: Failed to retrieve password from keychain: {e}")
+        return None
+
+
+def save_password_to_keyring(username, password):
+    """
+    Save password to OS keychain.
+    Arguments:
+        username (str): OneLogin username
+        password (str): OneLogin password
+    """
+    try:
+        keyring.set_password(KEYRING_SERVICE_NAME, username, password)
+        print(f"Password saved to OS keychain for user: {username}")
+    except Exception as e:
+        print(f"Warning: Failed to save password to keychain: {e}")
 
 
 def get_config(config_file_path):
@@ -698,7 +739,13 @@ def main():
             print("OneLogin Username: ")
             username_or_email = sys.stdin.readline().strip()
 
-            password = getpass.getpass("\nOneLogin Password: ")
+            # Try to get password from keychain
+            saved_password = get_password_from_keyring(username_or_email)
+            if saved_password:
+                print(f"Using saved password from keychain for user: {username_or_email}")
+                password = saved_password
+            else:
+                password = getpass.getpass("\nOneLogin Password: ")
             ask_for_user_again = False
             ask_for_role_again = True
         elif result is None and missing_onelogin_data:
@@ -714,7 +761,15 @@ def main():
                 if options.password:
                     password = options.password
                 else:
-                    password = getpass.getpass("\nOneLogin Password: ")
+                    # Try to get password from keychain if username is available
+                    if username_or_email:
+                        saved_password = get_password_from_keyring(username_or_email)
+                        if saved_password:
+                            print(f"Using saved password from keychain for user: {username_or_email}")
+                            password = saved_password
+
+                    if not password:
+                        password = getpass.getpass("\nOneLogin Password: ")
 
             if app_id is None:
                 if options.app_id:
@@ -749,6 +804,10 @@ def main():
             password = result["password"]
             onelogin_subdomain = result["onelogin_subdomain"]
             mfa_verify_info = result["mfa_verify_info"]
+
+            # Save password to keychain if --save-password option is specified
+            if options.save_password and username_or_email and password:
+                save_password_to_keyring(username_or_email, password)
 
             if options.cache_saml:
                 cached_content = result
