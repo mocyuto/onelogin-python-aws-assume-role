@@ -18,10 +18,14 @@ from botocore.exceptions import ClientError
 from lxml import etree as ET
 
 try:
+    from aws_assume_role import __version__
     from aws_assume_role.accounts import process_account_and_role_choices
     from aws_assume_role.onelogin_client import OneLoginClient
     from aws_assume_role.writer import ConfigFileWriter
 except ImportError:
+    from importlib.metadata import version
+
+    __version__ = version("onelogin-aws-assume-role")
     from accounts import process_account_and_role_choices
     from onelogin_client import OneLoginClient
     from writer import ConfigFileWriter
@@ -37,6 +41,7 @@ SAML_CACHE_PATH = os.path.join(DEFAULT_AWS_DIR, "saml_cache.txt")
 def get_options():
     parser = argparse.ArgumentParser()
 
+    parser.add_argument("-V", "--version", action="version", version=f"%(prog)s {__version__}")
     parser.add_argument("-i", "--client_id",
                         dest="client_id",
                         help="A valid OneLogin API client_id")
