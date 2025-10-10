@@ -99,18 +99,8 @@ select = [
 # Ignore specific rules for legacy code
 ignore = [
     "E501",    # line too long (handled by formatter)
-    "E711",    # comparison to None (legacy code)
     "E722",    # bare except (legacy code)
-    "N806",    # variable naming (legacy code)
-    "N812",    # lowercase imported as non-lowercase (legacy code)
-    "N999",    # invalid module name (aws-assume-role.py)
-    "UP031",   # use format specifiers (legacy code, can be fixed later)
-    "SIM102",  # nested if statements (legacy code)
-    "SIM105",  # contextlib.suppress (legacy code)
-    "SIM110",  # for loop to any (legacy code)
-    "SIM115",  # context manager for files (legacy code)
-    "SIM118",  # use 'in dict' instead of 'in dict.keys()' (legacy code)
-    "B006",    # mutable default argument (legacy code)
+
 ]
 
 # Allow fix for all enabled rules

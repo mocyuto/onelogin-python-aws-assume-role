@@ -99,6 +99,11 @@ def get_options():
         default=1,
         help="The version of the OneLogin SAML APIs to use",
     )
+    parser.add_argument(
+        "--mfa-device-type",
+        dest="mfa_device_type",
+        help="MFA Device Type to use (to skip MFA device selection prompt, e.g., 'Google Authenticator', 'OneLogin Protect')",
+    )
 
     options = parser.parse_args()
 
@@ -122,6 +127,8 @@ def get_options():
             options.aws_account_id = config["aws_account_id"]
         if "aws_role_name" in config.keys() and config["aws_role_name"] and not options.aws_role_name:
             options.aws_role_name = config["aws_role_name"]
+        if "mfa_device_type" in config.keys() and config["mfa_device_type"] and not options.mfa_device_type:
+            options.mfa_device_type = config["mfa_device_type"]
         if (
             "profiles" in config.keys()
             and config["profiles"]
@@ -222,7 +229,15 @@ def check_device_exists(devices, device_id):
 
 
 def get_saml_response(
-    client, username_or_email, password, app_id, onelogin_subdomain, ip=None, mfa_verify_info=None, cmd_otp=None
+    client,
+    username_or_email,
+    password,
+    app_id,
+    onelogin_subdomain,
+    ip=None,
+    mfa_verify_info=None,
+    cmd_otp=None,
+    mfa_device_type=None,
 ):
     saml_endpoint_response = client.get_saml_assertion(username_or_email, password, app_id, onelogin_subdomain, ip)
 
@@ -261,7 +276,7 @@ def get_saml_response(
             )
             sys.exit()
 
-    if saml_endpoint_response and saml_endpoint_response.type == None:
+    if saml_endpoint_response and saml_endpoint_response.type is None:
         print("SAML assertion failed with message: ", saml_endpoint_response.message)
         sys.exit()
 
@@ -287,17 +302,40 @@ def get_saml_response(
             # Consider case 0 or MFA that requires a trigger
             if mfa_verify_info is None or device_type in ["OneLogin SMS", "OneLogin Protect"]:
                 if mfa_verify_info is None:
-                    print("-----------------------------------------------------------------------")
-                    for index, device in enumerate(devices):
-                        print(" " + str(index) + " | " + device.type)
+                    # If mfa_device_type is specified, try to find matching device
+                    if mfa_device_type:
+                        device_selection = None
+                        for index, device in enumerate(devices):
+                            if device.type == mfa_device_type:
+                                device_selection = index
+                                print("Using MFA device: %s (type: %s)" % (device.id, device.type))
+                                break
 
-                    print("-----------------------------------------------------------------------")
-
-                    if len(devices) > 1:
-                        print("\nSelect the desired MFA Device [0-%s]: " % (len(devices) - 1))
-                        device_selection = get_selection(len(devices))
+                        if device_selection is None:
+                            print("Specified MFA device type '%s' not found." % mfa_device_type)
+                            print("Available devices:")
+                            print("-----------------------------------------------------------------------")
+                            for index, device in enumerate(devices):
+                                print(" " + str(index) + " | " + device.type)
+                            print("-----------------------------------------------------------------------")
+                            if len(devices) > 1:
+                                print("\nSelect the desired MFA Device [0-%s]: " % (len(devices) - 1))
+                                device_selection = get_selection(len(devices))
+                            else:
+                                device_selection = 0
                     else:
-                        device_selection = 0
+                        print("-----------------------------------------------------------------------")
+                        for index, device in enumerate(devices):
+                            print(" " + str(index) + " | " + device.type)
+
+                        print("-----------------------------------------------------------------------")
+
+                        if len(devices) > 1:
+                            print("\nSelect the desired MFA Device [0-%s]: " % (len(devices) - 1))
+                            device_selection = get_selection(len(devices))
+                        else:
+                            device_selection = 0
+
                     device = devices[device_selection]
                     device_id = device.id
                     device_type = device.type
@@ -364,7 +402,15 @@ def get_saml_response(
                         # State token expired so the OTP Token was not able to be processed
                         # regenerate new SAMLResponse and get new state_token
                         return get_saml_response(
-                            client, username_or_email, password, app_id, onelogin_subdomain, ip, mfa_verify_info
+                            client,
+                            username_or_email,
+                            password,
+                            app_id,
+                            onelogin_subdomain,
+                            ip,
+                            mfa_verify_info,
+                            None,
+                            mfa_device_type,
                         )
                     else:
                         if mfa_error > MFA_ATTEMPTS_FOR_WARNING and len(devices) > 1:
@@ -377,7 +423,15 @@ def get_saml_response(
                                 # Let's regenerate the SAMLResponse and initialize again the count
                                 print("\n")
                                 return get_saml_response(
-                                    client, username_or_email, password, app_id, onelogin_subdomain, ip, None
+                                    client,
+                                    username_or_email,
+                                    password,
+                                    app_id,
+                                    onelogin_subdomain,
+                                    ip,
+                                    None,
+                                    None,
+                                    mfa_device_type,
                                 )
                             else:
                                 print("Ok, Try introduce a new OTP Token then: ")
@@ -676,8 +730,19 @@ def main():
                 onelogin_subdomain = sys.stdin.readline().strip()
 
         if result is None:
+            mfa_device_type_to_use = None
+            if hasattr(options, "mfa_device_type") and options.mfa_device_type:
+                mfa_device_type_to_use = options.mfa_device_type
             result = get_saml_response(
-                client, username_or_email, password, app_id, onelogin_subdomain, ip, mfa_verify_info, cmd_otp
+                client,
+                username_or_email,
+                password,
+                app_id,
+                onelogin_subdomain,
+                ip,
+                mfa_verify_info,
+                cmd_otp,
+                mfa_device_type_to_use,
             )
 
             username_or_email = result["username_or_email"]

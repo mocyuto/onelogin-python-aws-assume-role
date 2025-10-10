@@ -5,11 +5,12 @@
 # Currently the onelogin saml does not support pulling the acct alias dynamically with the role names
 
 import os
+from argparse import Namespace
 
 import yaml
 
 
-def get_account_aliases_info(config_file_path):
+def get_account_aliases_info(config_file_path) -> list:
     account_aliases = []
     accountsfile = None
 
@@ -25,7 +26,7 @@ def get_account_aliases_info(config_file_path):
     return account_aliases
 
 
-def identify_known_accounts(account_aliases, account_id):
+def identify_known_accounts(account_aliases, account_id) -> str:
     """
     Given a known list of account IDs from yaml config, append note about their account if they're known to us.
     :return: Account description
@@ -42,7 +43,7 @@ def identify_known_accounts(account_aliases, account_id):
         return ""
 
 
-def pretty_choices(index, role_name, account_id, account_aliases=[], mark=""):
+def pretty_choices(index: int, role_name: str, account_id: str, account_aliases: list, mark: str = ""):
     """
     Formats the output of the account option
     :return: formatted print
@@ -54,7 +55,9 @@ def pretty_choices(index, role_name, account_id, account_aliases=[], mark=""):
         print(" %s | %s (Account %s)%s" % (index, role_name, account_id, mark))
 
 
-def process_account_and_role_choices(info_indexed_by_account, info_indexed_by_roles, options):
+def process_account_and_role_choices(
+    info_indexed_by_account: dict, info_indexed_by_roles: dict, options: Namespace
+) -> tuple:
     role_option = None
     selection_info = []
     index = 0
@@ -83,7 +86,7 @@ def process_account_and_role_choices(info_indexed_by_account, info_indexed_by_ro
     return selection_info, role_option
 
 
-def check_info(account_id, role_name, config_account_id, config_role_name):
+def check_info(account_id, role_name, config_account_id, config_role_name) -> tuple:
     mark = ""
     found = False
     if account_id == config_account_id and role_name == config_role_name:
