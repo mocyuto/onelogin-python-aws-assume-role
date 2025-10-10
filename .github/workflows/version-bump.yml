@@ -1,0 +1,115 @@
+name: Version Bump and Tag
+
+on:
+  workflow_dispatch:
+    inputs:
+      version_type:
+        description: 'バージョンアップのタイプを選択'
+        required: true
+        type: choice
+        options:
+          - patch
+          - minor
+          - major
+      custom_version:
+        description: 'カスタムバージョン（例: 1.2.3）※指定した場合は上記のタイプは無視されます'
+        required: false
+        type: string
+
+jobs:
+  version-bump:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          token: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Install uv
+        uses: astral-sh/setup-uv@v5
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+
+      - name: Get current version
+        id: current_version
+        run: |
+          CURRENT_VERSION=$(grep '^version = ' pyproject.toml | sed 's/version = "\(.*\)"/\1/')
+          echo "version=$CURRENT_VERSION" >> $GITHUB_OUTPUT
+          echo "Current version: $CURRENT_VERSION"
+
+      - name: Calculate new version
+        id: new_version
+        run: |
+          CURRENT="${{ steps.current_version.outputs.version }}"
+          CUSTOM="${{ github.event.inputs.custom_version }}"
+
+          if [ -n "$CUSTOM" ]; then
+            NEW_VERSION="$CUSTOM"
+            echo "Using custom version: $NEW_VERSION"
+          else
+            IFS='.' read -r major minor patch <<< "$CURRENT"
+
+            case "${{ github.event.inputs.version_type }}" in
+              major)
+                major=$((major + 1))
+                minor=0
+                patch=0
+                ;;
+              minor)
+                minor=$((minor + 1))
+                patch=0
+                ;;
+              patch)
+                patch=$((patch + 1))
+                ;;
+            esac
+
+            NEW_VERSION="$major.$minor.$patch"
+            echo "Calculated version: $NEW_VERSION (type: ${{ github.event.inputs.version_type }})"
+          fi
+
+          echo "version=$NEW_VERSION" >> $GITHUB_OUTPUT
+
+      - name: Update version in pyproject.toml
+        run: |
+          sed -i 's/^version = ".*"/version = "${{ steps.new_version.outputs.version }}"/' pyproject.toml
+          echo "Updated pyproject.toml to version ${{ steps.new_version.outputs.version }}"
+
+      - name: Display changes
+        run: |
+          echo "=== Changes in pyproject.toml ==="
+          git diff pyproject.toml
+
+      - name: Configure git
+        run: |
+          git config --local user.email "github-actions[bot]@users.noreply.github.com"
+          git config --local user.name "github-actions[bot]"
+
+      - name: Commit changes
+        run: |
+          git add pyproject.toml
+          git commit -m "chore: bump version to ${{ steps.new_version.outputs.version }}"
+
+      - name: Create and push tag
+        run: |
+          git tag -a "v${{ steps.new_version.outputs.version }}" -m "Release version ${{ steps.new_version.outputs.version }}"
+          git push origin main
+          git push origin "v${{ steps.new_version.outputs.version }}"
+
+      - name: Summary
+        run: |
+          echo "## バージョンアップ完了 🎉" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "- **旧バージョン**: ${{ steps.current_version.outputs.version }}" >> $GITHUB_STEP_SUMMARY
+          echo "- **新バージョン**: ${{ steps.new_version.outputs.version }}" >> $GITHUB_STEP_SUMMARY
+          echo "- **タグ**: v${{ steps.new_version.outputs.version }}" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "✅ コミットとタグがプッシュされました" >> $GITHUB_STEP_SUMMARY
+
