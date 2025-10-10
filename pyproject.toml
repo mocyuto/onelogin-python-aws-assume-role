@@ -32,6 +32,7 @@ dependencies = [
     "onelogin>=2.0,<3.0",
     "pyyaml>=5.1.2",
     "lxml",
+    "keyring>=23.0.0",
 ]
 
 [project.optional-dependencies]
