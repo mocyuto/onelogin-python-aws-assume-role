@@ -2,7 +2,6 @@ onelogin-python-aws-assume-role
 ===============================
 
 [![Lint and Format](https://github.com/mocyuto/onelogin-python-aws-assume-role/actions/workflows/lint.yml/badge.svg)](https://github.com/mocyuto/onelogin-python-aws-assume-role/actions/workflows/lint.yml)
-[![CI](https://github.com/mocyuto/onelogin-python-aws-assume-role/actions/workflows/ci.yml/badge.svg)](https://github.com/mocyuto/onelogin-python-aws-assume-role/actions/workflows/ci.yml)
 
 Assume an AWS Role and get temporary credentials using Onelogin.
 
@@ -34,10 +33,6 @@ The project is hosted at github. You can download it from:
 * Latest release: https://github.com/onelogin/onelogin-python-aws-assume-role/releases/latest
 * Master repo: https://github.com/onelogin/onelogin-python-aws-assume-role/tree/master
 
-#### Pypi
-
-The toolkit is hosted in pypi, you can find the python-saml package at [https://pypi.python.org/pypi/onelogin-aws-assume-role](https://pypi.python.org/pypi/onelogin-aws-assume-role)
-
 ### Dependencies
 
 It works with Python 3.8+.
@@ -49,7 +44,7 @@ It works with Python 3.8+.
 
 ## Getting started
 
-This project uses [uv](https://github.com/astral-sh/uv), a fast Python package manager, for dependency management.
+This project uses [uv](https://github.com/astral-sh/uv), a fast Python package manager.
 
 ### Install uv
 
@@ -60,15 +55,34 @@ curl -LsSf https://astral.sh/uv/install.sh | sh
 # Windows
 powershell -c "irm https://astral.sh/uv/install.ps1 | iex"
 
-# Using pip
-pip install uv
+
 ```
 
-### Install the project
+### Quick installation (Recommended for end users)
+
+You can install this package as a standalone tool using `uv tool install` or run it directly with `uvx`:
+
+```bash
+# Install as a tool (recommended for regular use)
+uv tool install git+https://github.com/mocyuto/onelogin-python-aws-assume-role.git
+
+# Run directly without installation (recommended for one-time use)
+uvx --from git+https://github.com/mocyuto/onelogin-python-aws-assume-role.git onelogin-aws-assume-role
+```
+
+After installing with `uv tool install`, you can run the command from anywhere:
+
+```bash
+onelogin-aws-assume-role --profile profilename
+```
+
+### Development installation
+
+For development purposes, you can clone the repository and install in development mode:
 
 ```bash
 # Clone the repository
-git clone https://github.com/onelogin/onelogin-python-aws-assume-role.git
+git clone https://github.com/mocyuto/onelogin-python-aws-assume-role.git
 cd onelogin-python-aws-assume-role
 
 # Install dependencies and the package
@@ -87,16 +101,6 @@ uv run onelogin-aws-assume-role
 source .venv/bin/activate  # On Unix/macOS
 # .venv\Scripts\activate  # On Windows
 onelogin-aws-assume-role
-```
-
-### Alternative: Install from PyPI
-
-```bash
-# Install globally with uv
-uv pip install onelogin-aws-assume-role
-
-# Or with pip
-pip install onelogin-aws-assume-role
 ```
 
 ### Settings
@@ -273,12 +277,6 @@ Or save credentials to your AWS credentials file to enable faster access from an
 uv run onelogin-aws-assume-role --profile profilename
 ```
 
-If you've activated the virtual environment, you can run the command directly:
-
-```sh
-source .venv/bin/activate  # On Unix/macOS
-onelogin-aws-assume-role --profile profilename
-```
 
 By default, the credentials only last for 1 hour, but you can [edit that restriction on AWS and set a max of 12h session duration](https://aws.amazon.com/es/blogs/security/enable-federated-api-access-to-your-aws-resources-for-up-to-12-hours-using-iam-roles/).
 
@@ -374,18 +372,23 @@ This project uses GitHub Actions for CI/CD:
 ### Releasing
 
 To release a new version:
-1. Update the version number in both `src/aws_assume_role/version.py` and `pyproject.toml`
+1. Update the version number in `pyproject.toml`
 2. Commit the changes
-3. Build and upload to PyPI:
-   ```sh
-   uv build
-   uv publish
-   ```
-4. Create a release tag on GitHub:
+3. Create a release tag on GitHub:
    ```sh
    git tag v1.x.x
    git push origin v1.x.x
    ```
+4. Create a GitHub release from the tag
+
+Users can then install the specific version:
+```sh
+# Install a specific version
+uv tool install git+https://github.com/mocyuto/onelogin-python-aws-assume-role.git@v1.x.x
+
+# Or run a specific version
+uvx --from git+https://github.com/mocyuto/onelogin-python-aws-assume-role.git@v1.x.x onelogin-aws-assume-role
+```
 
 ## Contributing
 
