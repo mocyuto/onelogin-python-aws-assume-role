@@ -14,7 +14,6 @@ import boto3
 import botocore.client
 from botocore.exceptions import ClientError
 from lxml import etree as ET
-
 from onelogin.api.client import OneLoginClient
 
 try:
