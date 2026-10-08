@@ -29,7 +29,6 @@ import datetime
 
 import requests
 
-
 # OneLogin API endpoint templates. The first ``%s`` is the subdomain
 # (``api.<region>`` or a custom account subdomain); the second, where present,
 # is the API version (1 or 2).
@@ -47,22 +46,22 @@ SAML_ASSERTION_VERSIONS = [1, 2]
 
 class Device(object):
     def __init__(self, data):
-        self.id = data.get('device_id', data.get('id'))
-        self.type = str(data.get('device_type', data.get('type_display_name', data.get('type', ''))))
-        self.display_name = data.get('user_display_name', '')
-        self.auth_factor_name = data.get('auth_factor_name', '')
-        self.default = data.get('default', False)
-        self.active = data.get('active', True)
-        self.needs_trigger = data.get('needs_trigger', False)
+        self.id = data.get("device_id", data.get("id"))
+        self.type = str(data.get("device_type", data.get("type_display_name", data.get("type", ""))))
+        self.display_name = data.get("user_display_name", "")
+        self.auth_factor_name = data.get("auth_factor_name", "")
+        self.default = data.get("default", False)
+        self.active = data.get("active", True)
+        self.needs_trigger = data.get("needs_trigger", False)
 
 
 class MFA(object):
     def __init__(self, data):
-        self.state_token = str(data.get('state_token', ''))
-        self.callback_url = str(data.get('callback_url', ''))
-        self.user = data.get('user')
+        self.state_token = str(data.get("state_token", ""))
+        self.callback_url = str(data.get("callback_url", ""))
+        self.user = data.get("user")
         self.devices = []
-        for device in data.get('devices', []) or []:
+        for device in data.get("devices", []) or []:
             self.devices.append(Device(device))
 
 
@@ -76,17 +75,17 @@ class SAMLEndpointResponse(object):
 
 def extract_error_message(content):
     """Pull a human-readable error description out of an API error body."""
-    message = ''
-    if content and 'status' in content:
-        status = content['status']
+    message = ""
+    if content and "status" in content:
+        status = content["status"]
         if isinstance(status, dict):
-            if 'message' in status:
-                if isinstance(status['message'], dict):
-                    message = status['message'].get('description', '')
+            if "message" in status:
+                if isinstance(status["message"], dict):
+                    message = status["message"].get("description", "")
                 else:
-                    message = status['message']
-            elif 'type' in status:
-                message = status['type']
+                    message = status["message"]
+            elif "type" in status:
+                message = status["type"]
     return message
 
 
@@ -99,27 +98,26 @@ def handle_saml_endpoint_response(content, version_id):
     saml_endpoint_response = None
     try:
         if version_id == 1:
-            if (content and 'status' in content and 'message' in content['status']
-                    and 'type' in content['status']):
-                status_type = content['status']['type']
-                status_message = content['status']['message']
+            if content and "status" in content and "message" in content["status"] and "type" in content["status"]:
+                status_type = content["status"]["type"]
+                status_message = content["status"]["message"]
                 saml_endpoint_response = SAMLEndpointResponse(status_type, status_message)
-                if 'data' in content:
-                    if status_message == 'Success':
-                        saml_endpoint_response.saml_response = str(content['data'])
+                if "data" in content:
+                    if status_message == "Success":
+                        saml_endpoint_response.saml_response = str(content["data"])
                     else:
-                        saml_endpoint_response.mfa = MFA(content['data'][0])
+                        saml_endpoint_response.mfa = MFA(content["data"][0])
         elif version_id == 2:
-            if 'message' in content:
+            if "message" in content:
                 status_type = None
-                if content['message'] == "Success" or "MFA is required" in content['message']:
+                if content["message"] == "Success" or "MFA is required" in content["message"]:
                     status_type = "success"
-                elif "pending" in content['message']:
+                elif "pending" in content["message"]:
                     status_type = "pending"
-                status_message = content['message']
+                status_message = content["message"]
                 saml_endpoint_response = SAMLEndpointResponse(status_type, status_message)
-                if 'data' in content:
-                    saml_endpoint_response.saml_response = str(content['data'])
+                if "data" in content:
+                    saml_endpoint_response.saml_response = str(content["data"])
                 elif "state_token" in content:
                     saml_endpoint_response.mfa = MFA(content)
     except Exception:
@@ -132,8 +130,7 @@ class OneLoginClient(object):
     that this CLI relies on, implemented directly against the OneLogin REST API.
     """
 
-    def __init__(self, client_id, client_secret, region='us', subdomain=None,
-                 default_timeout=(10, 60)):
+    def __init__(self, client_id, client_secret, region="us", subdomain=None, default_timeout=(10, 60)):
         self.client_id = client_id
         self.client_secret = client_secret
         self.region = "us" if region is None else region
@@ -157,7 +154,7 @@ class OneLoginClient(object):
         return self.subdomain if self.subdomain else "api.%s" % self.region
 
     def _assertion_version(self):
-        version = self.api_configuration.get('assertion')
+        version = self.api_configuration.get("assertion")
         if version in SAML_ASSERTION_VERSIONS:
             return version
         return SAML_ASSERTION_VERSIONS[-1]
@@ -176,46 +173,43 @@ class OneLoginClient(object):
 
     def get_headers(self):
         return {
-            'Content-Type': 'application/json',
-            'User-Agent': 'onelogin-aws-assume-role',
+            "Content-Type": "application/json",
+            "User-Agent": "onelogin-aws-assume-role",
         }
 
     def get_authorized_headers(self, bearer=True):
         headers = self.get_headers()
         if bearer:
-            headers['Authorization'] = "bearer %s" % self.access_token
+            headers["Authorization"] = "bearer %s" % self.access_token
         else:
-            headers['Authorization'] = "client_id:%s, client_secret:%s" % (
-                self.client_id, self.client_secret)
+            headers["Authorization"] = "client_id:%s, client_secret:%s" % (self.client_id, self.client_secret)
         return headers
 
     # -- OAuth token -------------------------------------------------------
 
     def is_expired(self):
-        return (self.expiration is not None
-                and datetime.datetime.now() > self.expiration)
+        return self.expiration is not None and datetime.datetime.now() > self.expiration
 
     def get_access_token(self):
         """Generate an OAuth access token from the API credentials."""
         self.clean_error()
         url = TOKEN_REQUEST_URL % self._get_subdomain()
         headers = self.get_authorized_headers(bearer=False)
-        response = requests.post(url, headers=headers,
-                                 json={'grant_type': 'client_credentials'},
-                                 timeout=self.default_timeout)
+        response = requests.post(
+            url, headers=headers, json={"grant_type": "client_credentials"}, timeout=self.default_timeout
+        )
         if response.status_code == 200:
             data = response.json()
             # The v2 token response can be flat or wrapped in {status, data}.
-            if isinstance(data, dict) and 'data' in data and 'access_token' not in data:
-                token = data['data'][0] if isinstance(data['data'], list) else data['data']
+            if isinstance(data, dict) and "data" in data and "access_token" not in data:
+                token = data["data"][0] if isinstance(data["data"], list) else data["data"]
             else:
                 token = data
-            self.access_token = token.get('access_token')
-            self.refresh_token = token.get('refresh_token')
-            expires_in = token.get('expires_in')
+            self.access_token = token.get("access_token")
+            self.refresh_token = token.get("refresh_token")
+            expires_in = token.get("expires_in")
             if expires_in:
-                self.expiration = (datetime.datetime.now()
-                                   + datetime.timedelta(seconds=expires_in))
+                self.expiration = datetime.datetime.now() + datetime.timedelta(seconds=expires_in)
             return token
         self.set_error(response)
 
@@ -229,8 +223,9 @@ class OneLoginClient(object):
 
     def _retrieve_saml_assertion(self, url, data, version_id):
         self.clean_error()
-        response = requests.post(url, headers=self.get_authorized_headers(bearer=True),
-                                 json=data, timeout=self.default_timeout)
+        response = requests.post(
+            url, headers=self.get_authorized_headers(bearer=True), json=data, timeout=self.default_timeout
+        )
         if response.status_code == 200:
             try:
                 content = response.json()
@@ -239,33 +234,32 @@ class OneLoginClient(object):
             return handle_saml_endpoint_response(content, version_id)
         self.set_error(response)
 
-    def get_saml_assertion(self, username_or_email, password, app_id, subdomain,
-                           ip_address=None):
+    def get_saml_assertion(self, username_or_email, password, app_id, subdomain, ip_address=None):
         version_id = self._assertion_version()
         url = GET_SAML_ASSERTION_URL % (self._get_subdomain(), version_id)
         data = {
-            'username_or_email': username_or_email,
-            'password': password,
-            'app_id': app_id,
-            'subdomain': subdomain,
+            "username_or_email": username_or_email,
+            "password": password,
+            "app_id": app_id,
+            "subdomain": subdomain,
         }
         if ip_address:
-            data['ip_address'] = ip_address
+            data["ip_address"] = ip_address
         return self._retrieve_saml_assertion(url, data, version_id)
 
-    def get_saml_assertion_verifying(self, app_id, device_id, state_token,
-                                     otp_token=None, url_endpoint=None,
-                                     do_not_notify=False):
+    def get_saml_assertion_verifying(
+        self, app_id, device_id, state_token, otp_token=None, url_endpoint=None, do_not_notify=False
+    ):
         version_id = self._assertion_version()
         url = url_endpoint or (GET_SAML_VERIFY_FACTOR % (self._get_subdomain(), version_id))
         data = {
-            'app_id': int(app_id),
-            'device_id': str(device_id),
-            'state_token': str(state_token),
-            'do_not_notify': do_not_notify,
+            "app_id": int(app_id),
+            "device_id": str(device_id),
+            "state_token": str(state_token),
+            "do_not_notify": do_not_notify,
         }
         if otp_token:
-            data['otp_token'] = otp_token
+            data["otp_token"] = otp_token
         return self._retrieve_saml_assertion(url, data, version_id)
 
     # -- MFA Devices ------------------------------------------------------
@@ -279,18 +273,17 @@ class OneLoginClient(object):
         """
         self.clean_error()
         url = GET_OTP_DEVICES_URL % (self._get_subdomain(), user_id)
-        response = requests.get(url, headers=self.get_authorized_headers(),
-                                timeout=self.default_timeout)
+        response = requests.get(url, headers=self.get_authorized_headers(), timeout=self.default_timeout)
         if response.status_code == 200:
             try:
                 content = response.json()
             except ValueError:
                 return []
-            devices_data = content.get('data', {})
+            devices_data = content.get("data", {})
             if isinstance(devices_data, dict):
-                otp_devices = devices_data.get('otp_devices', [])
+                otp_devices = devices_data.get("otp_devices", [])
             else:
                 otp_devices = []
-            return [Device(d) for d in otp_devices if d.get('active', True)]
+            return [Device(d) for d in otp_devices if d.get("active", True)]
         self.set_error(response)
         return []
