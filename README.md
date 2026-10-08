@@ -156,6 +156,7 @@ There is an optional file `onelogin.aws.json`, that can be used if you plan to e
   "aws_account_id": "",
   "aws_role_name": "",
   "mfa_device_type": "",
+  "save_password": false,
   "profiles": {
     "profile-1": {
       "aws_account_id": "",
@@ -181,6 +182,7 @@ Where:
  * aws_account_id AWS account id to be used
  * aws_role_name AWS role name to select
  * mfa_device_type MFA Device Type to use (to skip MFA device selection prompt, e.g., 'Google Authenticator', 'OneLogin Protect')
+ * save_password Save the OneLogin password to the OS keychain after successful OneLogin authentication (default: false). Can also be enabled with `--save-password`.
  * profiles Contains a list of profile->account id, and optionally role name mappings. If this attribute is populated `aws_account_id`, `aws_role_name`, `aws_region`, and `app_id` will be set based on the `profile` provided when running the script.
 
 **Note**: Configuration values have the following precedence (from highest to lowest):
@@ -259,6 +261,8 @@ Flag `--onelogin-password` is meant for integration with a password manager, lik
 However, using any of these leaves your password visible in the process table because command-line arguments are expanded before applications are started.  Mac users can avoid that by reading the password directly from OSX Keychain with arguments `--keychain-account` and/or `--keychain-service`.  Skip the command-line arguments entirely by putting those in `onelogin.aws.json` as `keychain_account` and `keychain_service`, respectively.
 - If you specify only the keychain account on the command-line or in `onelogin.aws.json`, it will default to "onelogin" as the keychain service.
 - If you specify only the keychain service, then "keychain account" will use "onelogin username", minus the "@" symbol and everything that follows it.
+
+Set `"save_password": true` in `onelogin.aws.json`, or pass `--save-password`, to save the password after successful OneLogin authentication. Saved passwords are automatically reused on subsequent runs. The default entry uses service `onelogin-aws-assume-role` and the full OneLogin username as its account. If `keychain_service` or `keychain_account` is configured, both reading and saving use that entry with the defaults described above. If the keychain is unavailable, the tool reports a warning and prompts for the password as needed.
 
 **NOTE:** *Technically you can specify your password after `--onelogin-password`, but it's bad practice - because that's visible in the machine's process list and, worse, it gets saved in your command history.*  **Don't do it.**
 
