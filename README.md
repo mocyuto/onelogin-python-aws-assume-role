@@ -9,7 +9,7 @@ Users will be able to choose from among multiple AWS roles in multiple AWS accou
 
 This is really useful for customers that run complex environments with multiple AWS accounts, roles and many different people that need periodic access as it saves manually generating and managing AWS credentials.
 
-This repository contains a python script at [src/aws_assume_role/aws_assume_role.py](https://github.com/onelogin/onelogin-python-aws-assume-role/blob/master/src/aws_assume_role/aws_assume_role.py) that you can execute using `onelogin-aws-assume-role` in order to retrieve the AWS credentials.
+This fork is maintained at [mocyuto/onelogin-python-aws-assume-role](https://github.com/mocyuto/onelogin-python-aws-assume-role). It contains a Python script at [src/aws_assume_role/aws_assume_role.py](src/aws_assume_role/aws_assume_role.py) that you can execute using `onelogin-aws-assume-role` to retrieve AWS credentials.
 
 OneLogin's Smart MFA cannot be enforced with OneLogin's AWS CLI utility
 
@@ -25,34 +25,7 @@ The "[Configuring SAML for Amazon Web Services (AWS) with Multiple Accounts and 
 
 ## Installation
 
-### Hosting
-
-#### Github
-
-The project is hosted at github. You can download it from:
-* Latest release: https://github.com/onelogin/onelogin-python-aws-assume-role/releases/latest
-* Master repo: https://github.com/onelogin/onelogin-python-aws-assume-role/tree/master
-
-#### Pypi
-
-The toolkit is hosted on pypi, you can find the package at [https://pypi.org/project/onelogin-aws-assume-role/](https://pypi.org/project/onelogin-aws-assume-role/)
-
-The quickest way to install the command-line tool is from PyPI:
-
-```
-pip install onelogin-aws-assume-role
-```
-
-To install it as an isolated command-line tool (recommended if you just want to
-use it rather than develop on it), use [pipx](https://pypa.github.io/pipx/):
-
-```
-pipx install onelogin-aws-assume-role
-```
-
-This avoids having to manage a virtualenv yourself; `pipx` keeps the tool and
-its dependencies isolated while still putting `onelogin-aws-assume-role` on your
-PATH.
+Install this fork directly from GitHub with uv, using the instructions below.
 
 ### Dependencies
 
@@ -82,14 +55,14 @@ powershell -c "irm https://astral.sh/uv/install.ps1 | iex"
 
 ### Quick installation (Recommended for end users)
 
-You can install this package as a standalone tool using `uv tool install` or run it directly with `uvx`:
+Install the fork's `main` branch as a standalone tool using `uv tool install`, or run it directly with `uvx`:
 
 ```bash
 # Install as a tool (recommended for regular use)
-uv tool install git+https://github.com/mocyuto/onelogin-python-aws-assume-role.git
+uv tool install git+https://github.com/mocyuto/onelogin-python-aws-assume-role.git@main
 
 # Run directly without installation (recommended for one-time use)
-uvx --from git+https://github.com/mocyuto/onelogin-python-aws-assume-role.git onelogin-aws-assume-role
+uvx --from git+https://github.com/mocyuto/onelogin-python-aws-assume-role.git@main onelogin-aws-assume-role
 ```
 
 After installing with `uv tool install`, you can run the command from anywhere:
@@ -108,7 +81,7 @@ git clone https://github.com/mocyuto/onelogin-python-aws-assume-role.git
 cd onelogin-python-aws-assume-role
 
 # Install dependencies and the package
-uv sync
+uv sync --locked
 ```
 
 This will create a virtual environment in `.venv` and install all dependencies automatically.
@@ -116,9 +89,7 @@ This will create a virtual environment in `.venv` and install all dependencies a
 
 ## Settings
 
-The python script uses a settings file, where [OneLogin SDK properties](https://github.com/onelogin/onelogin-python-sdk#getting-started) are placed.
-
-Is a json file named `onelogin.sdk.json` as follows:
+The client reads OneLogin API credentials from a JSON file named `onelogin.sdk.json`:
 
 ```json
 {
@@ -287,7 +258,7 @@ After checking out the repository, install dependencies with uv:
 
 ```sh
 cd onelogin-python-aws-assume-role
-uv sync
+uv sync --locked
 ```
 
 This will create a virtual environment and install all dependencies automatically.
@@ -298,13 +269,13 @@ Assuming you have your AWS Multi Account app set up correctly and you're using v
 
 ```sh
 # Run directly with uv
-uv run onelogin-aws-assume-role
+uv run --no-sync onelogin-aws-assume-role
 ```
 
 Or save credentials to your AWS credentials file to enable faster access from any terminal:
 
 ```sh
-uv run onelogin-aws-assume-role --profile profilename
+uv run --no-sync onelogin-aws-assume-role --profile profilename
 ```
 
 
@@ -353,14 +324,14 @@ aws ec2 describe-instances
 After checking out the repo, install all dependencies including development dependencies:
 
 ```sh
-uv sync
+uv sync --locked
 ```
 
-Development dependencies are automatically included with `uv sync`.
+Development dependencies are automatically included with `uv sync --locked`.
 
 ### Docker installation method
 
-* `git clone git@github.com:onelogin/onelogin-python-aws-assume-role.git`
+* `git clone https://github.com/mocyuto/onelogin-python-aws-assume-role.git`
 * `cd onelogin-python-aws-assume-role`
 * Enter your credentials in the `onelogin.sdk.json` file as explained above
 * Save the `onelogin.sdk.json` file in the root directory of the repo
@@ -384,7 +355,7 @@ uv run pre-commit run --all-files
 ### Running tests
 
 ```sh
-uv run pytest
+uv run --no-sync python -m unittest discover -s tests -v
 ```
 
 ### Linting and formatting
@@ -408,37 +379,16 @@ uv run ruff format --check src/
 This project uses GitHub Actions for CI/CD:
 
 - **Lint workflow** - Automatically formats code on pull requests
-- **CI workflow** - Runs tests and builds on multiple Python versions (3.8-3.12)
-
-### Releasing
-
-To release a new version:
-1. Update the version number in `pyproject.toml`
-2. Commit the changes
-3. Create a release tag on GitHub:
-   ```sh
-   git tag v1.x.x
-   git push origin v1.x.x
-   ```
-4. Create a GitHub release from the tag
-
-Users can then install the specific version:
-```sh
-# Install a specific version
-uv tool install git+https://github.com/mocyuto/onelogin-python-aws-assume-role.git@v1.x.x
-
-# Or run a specific version
-uvx --from git+https://github.com/mocyuto/onelogin-python-aws-assume-role.git@v1.x.x onelogin-aws-assume-role
-```
+- **Tests workflow** - Runs unittest with uv and locked runtime dependencies on Python 3.8-3.12
 
 ## Contributing
 
-Bug reports and pull requests are welcome on GitHub at https://github.com/onelogin/onelogin-python-aws-assume-role. This project is intended to be a safe, welcoming space for collaboration, and contributors are expected to adhere to the [Contributor Covenant](http://contributor-covenant.org) code of conduct.
+Bug reports and pull requests for this fork are welcome on GitHub at https://github.com/mocyuto/onelogin-python-aws-assume-role. This project is intended to be a safe, welcoming space for collaboration, and contributors are expected to adhere to the [Contributor Covenant](http://contributor-covenant.org) code of conduct.
 
 ## License
 
-The gem is available as open source under the terms of the [MIT License](http://opensource.org/licenses/MIT).
+The project is available as open source under the terms of the [MIT License](http://opensource.org/licenses/MIT).
 
 ## Code of Conduct
 
-Everyone interacting in the OneLogin Assume AWS Role project’s codebases, issue trackers, chat rooms and mailing lists is expected to follow the [code of conduct](https://github.com/onelogin/onelogin-python-aws-assume-role/blob/master/CODE_OF_CONDUCT.md).
+Everyone interacting in the OneLogin Assume AWS Role project’s codebases, issue trackers, chat rooms and mailing lists is expected to follow the [code of conduct](CODE_OF_CONDUCT.md).
