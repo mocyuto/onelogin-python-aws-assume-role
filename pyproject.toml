@@ -1,5 +1,5 @@
 [build-system]
-requires = ["setuptools>=77.0.0", "wheel"]
+requires = ["setuptools>=61", "wheel"]
 build-backend = "setuptools.build_meta"
 
 [project]
@@ -8,7 +8,7 @@ version = "2.1.0"
 description = "Assume an AWS Role and get temporary credentials using OneLogin"
 readme = "README.md"
 requires-python = ">=3.8"
-license = "MIT"
+license = { text = "MIT" }
 authors = [
     { name = "Yuto Suzuki", email = "yuutoo.advance@gmail.com" },
     { name = "OneLogin", email = "support@onelogin.com" }
@@ -29,7 +29,7 @@ classifiers = [
 
 dependencies = [
     "boto3>=1.7.84",
-    "onelogin>=2.0,<3.0",
+    "requests>=2.20.0",
     "pyyaml>=5.1.2",
     "lxml",
     "keyring>=23.0.0",

@@ -3,7 +3,7 @@ FROM ghcr.io/astral-sh/uv:python3.12-bookworm-slim
 WORKDIR /app
 
 # Copy project configuration files
-COPY pyproject.toml .python-version ./
+COPY pyproject.toml uv.lock .python-version README.md LICENSE ./
 
 # Copy source code
 COPY src ./src
@@ -18,5 +18,5 @@ RUN uv pip install awscli
 RUN mkdir -p /root/.onelogin
 
 # Set the entrypoint to use uv run
-ENTRYPOINT ["uv", "run"]
+ENTRYPOINT ["uv", "run", "--no-sync"]
 CMD ["onelogin-aws-assume-role", "--help"]

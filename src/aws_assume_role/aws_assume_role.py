@@ -15,17 +15,18 @@ import botocore.client
 import keyring
 from botocore.exceptions import ClientError
 from lxml import etree as ET
-from onelogin.api.client import OneLoginClient
 
 try:
     from aws_assume_role import __version__
     from aws_assume_role.accounts import process_account_and_role_choices
+    from aws_assume_role.onelogin_client import OneLoginClient
     from aws_assume_role.writer import ConfigFileWriter
 except ImportError:
     from importlib.metadata import version
 
     __version__ = version("onelogin-aws-assume-role")
     from accounts import process_account_and_role_choices
+    from onelogin_client import OneLoginClient
     from writer import ConfigFileWriter
 
 
@@ -66,7 +67,7 @@ def get_options():
         dest="save_password",
         default=False,
         action="store_true",
-        help="Save OneLogin password to OS keychain",
+        help="Save OneLogin password to OS keychain after successful authentication",
     )
     parser.add_argument("--otp", dest="otp", help="2FA OTP")
     parser.add_argument("-a", "--onelogin-app-id", dest="app_id", help="OneLogin app id")
@@ -109,37 +110,52 @@ def get_options():
         help="The version of the OneLogin SAML APIs to use",
     )
     parser.add_argument(
+        "--keychain-service",
+        dest="keychain_service",
+        help='Service name in the OSX Keychain entry, seen as "Where" in the Keychain GUI',
+    )
+    parser.add_argument("--keychain-account", dest="keychain_account", help="Account name in the OSX Keychain entry.")
+    parser.add_argument(
         "--mfa-device-type",
         dest="mfa_device_type",
         help="MFA Device Type to use (to skip MFA device selection prompt, e.g., 'Google Authenticator', 'OneLogin Protect')",
     )
-
     options = parser.parse_args()
+
+    # Track which options were provided via command line
+    # These should not be overridden by config file values
+    cli_provided = {
+        "app_id": options.app_id is not None,
+        "subdomain": options.subdomain is not None,
+        "username": options.username is not None,
+        "profile_name": options.profile_name is not None,
+        "duration": options.duration is not None,
+        "aws_region": options.aws_region is not None,
+        "aws_account_id": options.aws_account_id is not None,
+        "aws_role_name": options.aws_role_name is not None,
+    }
 
     # Read params from file, but only use them
     # if no value provided on command line
     config = get_config(options.config_file_path)
     if config is not None:
-        if "app_id" in config.keys() and config["app_id"] and not options.app_id:
+        if "app_id" in config.keys() and config["app_id"] and not cli_provided["app_id"]:
             options.app_id = config["app_id"]
-        if "subdomain" in config.keys() and config["subdomain"] and not options.subdomain:
+        if "subdomain" in config.keys() and config["subdomain"] and not cli_provided["subdomain"]:
             options.subdomain = config["subdomain"]
-        if "username" in config.keys() and config["username"] and not options.username:
+        if "username" in config.keys() and config["username"] and not cli_provided["username"]:
             options.username = config["username"]
-        if "profile" in config.keys() and config["profile"] and not options.profile_name:
+        if "profile" in config.keys() and config["profile"] and not cli_provided["profile_name"]:
             options.profile_name = config["profile"]
-        if "duration" in config.keys() and config["duration"] and not options.duration:
+        if "duration" in config.keys() and config["duration"] and not cli_provided["duration"]:
             options.duration = config["duration"]
-        if "aws_region" in config.keys() and config["aws_region"] and not options.aws_region:
+        if "aws_region" in config.keys() and config["aws_region"] and not cli_provided["aws_region"]:
             options.aws_region = config["aws_region"]
-        if "aws_account_id" in config.keys() and config["aws_account_id"] and not options.aws_account_id:
+        if "aws_account_id" in config.keys() and config["aws_account_id"] and not cli_provided["aws_account_id"]:
             options.aws_account_id = config["aws_account_id"]
-        if "aws_role_name" in config.keys() and config["aws_role_name"] and not options.aws_role_name:
+        if "aws_role_name" in config.keys() and config["aws_role_name"] and not cli_provided["aws_role_name"]:
             options.aws_role_name = config["aws_role_name"]
-        if "mfa_device_type" in config.keys() and config["mfa_device_type"] and not options.mfa_device_type:
-            options.mfa_device_type = config["mfa_device_type"]
-        if "save_password" in config.keys() and config["save_password"] and not options.save_password:
-            options.save_password = config["save_password"]
+        # Profile-specific values override global config defaults (but not CLI arguments)
         if (
             "profiles" in config.keys()
             and config["profiles"]
@@ -147,15 +163,24 @@ def get_options():
             and options.profile_name in config["profiles"].keys()
         ):
             profile = config["profiles"][options.profile_name]
-            if "aws_account_id" in profile.keys() and profile["aws_account_id"] and not options.aws_account_id:
+            if "aws_account_id" in profile.keys() and profile["aws_account_id"] and not cli_provided["aws_account_id"]:
                 options.aws_account_id = profile["aws_account_id"]
-            if "aws_role_name" in profile.keys() and profile["aws_role_name"] and not options.aws_role_name:
+            if "aws_role_name" in profile.keys() and profile["aws_role_name"] and not cli_provided["aws_role_name"]:
                 options.aws_role_name = profile["aws_role_name"]
-            if "aws_region" in profile.keys() and profile["aws_region"] and not options.aws_region:
+            if "aws_region" in profile.keys() and profile["aws_region"] and not cli_provided["aws_region"]:
                 options.aws_region = profile["aws_region"]
-            if "app_id" in profile.keys() and profile["app_id"] and not options.app_id:
+            if "app_id" in profile.keys() and profile["app_id"] and not cli_provided["app_id"]:
                 options.app_id = profile["app_id"]
-
+        if "keychain_service" in config.keys() and config["keychain_service"] and not options.keychain_service:
+            options.keychain_service = config["keychain_service"]
+        if "keychain_account" in config.keys() and config["keychain_account"] and not options.keychain_account:
+            options.keychain_account = config["keychain_account"]
+        if config.get("save_password") and not options.save_password:
+            options.save_password = config["save_password"]
+        if "mfa_device_type" in config.keys() and config["mfa_device_type"] and not options.mfa_device_type:
+            options.mfa_device_type = config["mfa_device_type"]
+    if options.keychain_account and not options.keychain_service:
+        options.keychain_service = "onelogin"
     options.time = options.time
     if options.time < 15:
         options.time = 15
@@ -177,30 +202,28 @@ def get_options():
     return options
 
 
-def get_password_from_keyring(username):
-    """
-    Get password from OS keychain.
-    Arguments:
-        username (str): OneLogin username
-    Returns:
-        str: Password or None if not found
-    """
+def get_keyring_entry(username, service=None, account=None):
+    """Resolve automatic password storage or an explicitly configured Keychain entry."""
+    if service or account:
+        return service or "onelogin", account or username.split("@")[0]
+    return KEYRING_SERVICE_NAME, username
+
+
+def get_password_from_keyring(username, service=None, account=None):
+    """Read a saved OneLogin password, allowing interactive input if unavailable."""
+    service, account = get_keyring_entry(username, service, account)
     try:
-        return keyring.get_password(KEYRING_SERVICE_NAME, username)
+        return keyring.get_password(service, account)
     except Exception as e:
         print(f"Warning: Failed to retrieve password from keychain: {e}")
         return None
 
 
-def save_password_to_keyring(username, password):
-    """
-    Save password to OS keychain.
-    Arguments:
-        username (str): OneLogin username
-        password (str): OneLogin password
-    """
+def save_password_to_keyring(username, password, service=None, account=None):
+    """Save a password after successful OneLogin authentication."""
+    service, account = get_keyring_entry(username, service, account)
     try:
-        keyring.set_password(KEYRING_SERVICE_NAME, username, password)
+        keyring.set_password(service, account, password)
         print(f"Password saved to OS keychain for user: {username}")
     except Exception as e:
         print(f"Warning: Failed to save password to keychain: {e}")
@@ -302,9 +325,17 @@ def get_saml_response(
                     print("OneLogin Username: ")
                     username_or_email = sys.stdin.readline().strip()
                 else:
-                    raise Exception(error_msg)
+                    # An unrecognized 400/401 here is typically a wrong AWS app
+                    # id (or an app the user isn't entitled to). Fail fast rather
+                    # than re-submitting credentials, which can lock the account.
+                    raise Exception(error_msg + "\nVerify that the AWS app id is correct and assigned to this user.")
             elif client.error is not None:
+                # Any other error (e.g. app not found, rate limited, server
+                # error) will not be resolved by re-sending the same request.
+                # Retrying would burn login attempts and can lock the OneLogin
+                # account, so stop here instead of looping (see issue 69).
                 print("Error %s. %s" % (client.error, client.error_description))
+                sys.exit(1)
 
         if saml_endpoint_response and saml_endpoint_response.type == "pending":
             time.sleep(TIME_SLEEP_ON_RESPONSE_PENDING)
@@ -327,6 +358,11 @@ def get_saml_response(
             devices = mfa.devices
             state_token = mfa.state_token
 
+            if mfa.user and mfa.user.get("id"):
+                enriched = client.get_otp_devices(mfa.user["id"])
+                if enriched:
+                    devices = enriched
+
             if mfa_verify_info is None or "device_id" not in mfa_verify_info:
                 print("\nMFA Required")
                 print("Authenticate using one of these devices:")
@@ -346,9 +382,12 @@ def get_saml_response(
                     if mfa_device_type:
                         device_selection = None
                         for index, device in enumerate(devices):
-                            if device.type == mfa_device_type:
+                            if (device.auth_factor_name or device.type) == mfa_device_type:
                                 device_selection = index
-                                print("Using MFA device: %s (type: %s)" % (device.id, device.type))
+                                print(
+                                    "Using MFA device: %s (type: %s)"
+                                    % (device.id, device.auth_factor_name or device.type)
+                                )
                                 break
 
                         if device_selection is None:
@@ -356,7 +395,10 @@ def get_saml_response(
                             print("Available devices:")
                             print("-----------------------------------------------------------------------")
                             for index, device in enumerate(devices):
-                                print(" " + str(index) + " | " + device.type)
+                                label = device.auth_factor_name or device.type
+                                if device.display_name:
+                                    label += " (%s)" % device.display_name
+                                print(" " + str(index) + " | " + label)
                             print("-----------------------------------------------------------------------")
                             if len(devices) > 1:
                                 print("\nSelect the desired MFA Device [0-%s]: " % (len(devices) - 1))
@@ -366,7 +408,10 @@ def get_saml_response(
                     else:
                         print("-----------------------------------------------------------------------")
                         for index, device in enumerate(devices):
-                            print(" " + str(index) + " | " + device.type)
+                            label = device.auth_factor_name or device.type
+                            if device.display_name:
+                                label += " (%s)" % device.display_name
+                            print(" " + str(index) + " | " + label)
 
                         print("-----------------------------------------------------------------------")
 
@@ -378,7 +423,7 @@ def get_saml_response(
 
                     device = devices[device_selection]
                     device_id = device.id
-                    device_type = device.type
+                    device_type = device.auth_factor_name or device.type
 
                     mfa_verify_info = {
                         "device_id": device_id,
@@ -738,11 +783,9 @@ def main():
             print("OneLogin Username: ")
             username_or_email = sys.stdin.readline().strip()
 
-            # Try to get password from keychain
-            saved_password = get_password_from_keyring(username_or_email)
-            if saved_password:
+            password = get_password_from_keyring(username_or_email, options.keychain_service, options.keychain_account)
+            if password:
                 print(f"Using saved password from keychain for user: {username_or_email}")
-                password = saved_password
             else:
                 password = getpass.getpass("\nOneLogin Password: ")
             ask_for_user_again = False
@@ -760,15 +803,13 @@ def main():
                 if options.password:
                     password = options.password
                 else:
-                    # Try to get password from keychain if username is available
-                    if username_or_email:
-                        saved_password = get_password_from_keyring(username_or_email)
-                        if saved_password:
-                            print(f"Using saved password from keychain for user: {username_or_email}")
-                            password = saved_password
-
-                    if not password:
-                        password = getpass.getpass("\nOneLogin Password: ")
+                    password = get_password_from_keyring(
+                        username_or_email, options.keychain_service, options.keychain_account
+                    )
+                    if password:
+                        print(f"Using saved password from keychain for user: {username_or_email}")
+                if not password:
+                    password = getpass.getpass("\nOneLogin Password: ")
 
             if app_id is None:
                 if options.app_id:
@@ -804,9 +845,10 @@ def main():
             onelogin_subdomain = result["onelogin_subdomain"]
             mfa_verify_info = result["mfa_verify_info"]
 
-            # Save password to keychain if --save-password option is specified
-            if options.save_password and username_or_email and password:
-                save_password_to_keyring(username_or_email, password)
+            if options.save_password and result["saml_response"] and username_or_email and password:
+                save_password_to_keyring(
+                    username_or_email, password, options.keychain_service, options.keychain_account
+                )
 
             if options.cache_saml:
                 cached_content = result
@@ -895,8 +937,8 @@ def main():
                 principal_arn = selected_role_data[1]
                 ask_for_user_again = False
 
-        if i == 0:
-            # AWS Region
+        if i == 0 or ask_for_role_again:
+            # AWS Region - prompt on first run or when switching roles
             if options.aws_region:
                 aws_region = options.aws_region
             else:
@@ -904,6 +946,7 @@ def main():
                 aws_region = sys.stdin.readline().strip()
             if not aws_region or aws_region == "-":
                 aws_region = default_aws_region
+            ask_for_role_again = False
 
         conn = boto3.client("sts", region_name=aws_region, config=botocore_config)
         try:
